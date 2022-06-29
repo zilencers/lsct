@@ -1,0 +1,114 @@
+#!/bin/bash
+
+DISTRO=""
+PKG_MGR=""
+INSTALL=""
+DEPENDS="git"
+PKG_LIST="https://github.com/zilencers/lsct-pkgs"
+DISPLAY_NAME=()
+DESC=()
+PKG_NAME=()
+GIT=()
+LSCT_PKG_DIR="lsct-pkgs"
+
+get_distro() {
+    if [ -f /etc/arch-release ] ; then
+        DISTRO="arch"
+        PKG_MGR="pacman"
+	INSTALL="-S"
+    elif [ -f /etc/debian-version ] ; then
+        DISTRO="debian"
+	PKG_MGR="apt"
+	INSTALL="install"
+    elif [ -f /etc/redhat-release ] ; then
+	DISTRO="redhat"
+	PKG_MGR="yum"
+	INSTALL="install"
+    fi
+}
+
+dependency_check() {
+    local dependencies=$(which git)
+
+    if [ ! $dependencies ] ; then
+        echo "Installing Dependencies..."
+	$PKG_MGR $INSTALL $DEPENDS
+    fi    
+}
+
+get_pkg_list() {
+    echo "Getting available packages..."
+    
+    if [ -d lsct-pkgs ] ; then
+        rm -r $LSCT_PKG_DIR
+    fi
+
+    git clone $PKG_LIST
+}
+
+read_pkg_list() {
+    echo "Reading packages..."
+    local file="lsct-pkgs/pkg.list"
+
+    DISPLAY_NAME+=($(grep -i name $file | cut -d "=" -f 2))
+    DESC+=($(grep -i desc $file | cut -d "=" -f 2))
+    GIT+=($(grep -i git $file | cut -d "=" -f 2))
+
+    if [ "$DISTRO" == "arch" ] ; then
+        PKG_NAME+=($(grep -i arch_pkg $file | cut -d "=" -f 2))
+    elif [ "$DISTRO" == "debian"  ] ; then
+        PKG_NAME+=($(grep -i deb_pkg $file | cut -d "=" -f 2))
+    elif [ "$DISTRO" == "redhat" ] ; then
+        PKG_NAME+=($(grep -i redhat_pkg $file | cut -d "=" -f 2))
+    fi
+}
+
+get_package() {
+    echo "Option: $@"
+    mkdir packages
+    cd packages
+    #git clone 
+}
+
+execute() {
+    case $@ in
+        1)
+	   packages/pkg-mgr.sh
+	   ;;
+	2)
+	   echo "2"
+	   ;;
+    esac
+}
+
+menu() {
+    #clear
+    echo "------------------------------------------------" 
+    echo "        Linux Server Configuration Tool"
+    echo "                   Main Menu"
+    echo "------------------------------------------------"
+    echo ""
+    echo "Please choose an option:"
+
+    j=1
+    for ((i=0; i < ${#DISPLAY_NAME[@]}; i++ ))
+    do
+	printf "$j) ${DISPLAY_NAME[$i]}:	${DESC[$i]}" | sed 's/|/ /g' | column -t -s ':' 
+	((j++))
+    done
+
+    printf "Option: "
+    read OPTION
+    
+    get_package $OPTION-1
+}
+
+main() {
+    get_distro
+    dependency_check
+    get_pkg_list
+    read_pkg_list
+    menu
+}
+
+main
