@@ -39,12 +39,17 @@ dependency_check() {
 
 get_pkg_list() {
     echo "Getting available packages..."
-    
-    if [ -d lsct-pkgs ] ; then
-        rm -r $LSCT_PKG_DIR
-    fi
 
-    git clone $PKG_LIST
+    local dt=$(date "+%Y%m%d")
+    local last_update=$(ls $LSCT_PKG_DIR | grep "[0-9]")
+    
+    if [ ! "$last_update" == "$dt" ] ; then
+        rm -r $LSCT_PKG_DIR
+        git clone $PKG_LIST
+        touch $LSCT_PKG_DIR/$dt
+    else
+        echo "Package list up to date...skipping"
+    fi
 }
 
 read_pkg_list() {
@@ -113,8 +118,8 @@ main() {
     get_distro
     dependency_check
     get_pkg_list
-    read_pkg_list
-    menu
+    #read_pkg_list
+    #menu
 }
 
 main
