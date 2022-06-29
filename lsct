@@ -9,6 +9,7 @@ DISPLAY_NAME=()
 DESC=()
 PKG_NAME=()
 GIT=()
+LSCT_PKG=()
 LSCT_PKG_DIR="lsct-pkgs"
 
 get_distro() {
@@ -53,6 +54,7 @@ read_pkg_list() {
     DISPLAY_NAME+=($(grep -i name $file | cut -d "=" -f 2))
     DESC+=($(grep -i desc $file | cut -d "=" -f 2))
     GIT+=($(grep -i git $file | cut -d "=" -f 2))
+    LSCT_PKG+=($(grep -i lsct_pkg $file | cut -d "=" -f 2))
 
     if [ "$DISTRO" == "arch" ] ; then
         PKG_NAME+=($(grep -i arch_pkg $file | cut -d "=" -f 2))
@@ -64,21 +66,24 @@ read_pkg_list() {
 }
 
 get_package() {
-    echo "Option: $@"
+    if [ $1 == $2 ] ; then
+        exit 0
+    fi
+
     mkdir packages
     cd packages
-    #git clone 
+    git clone ${GIT[$1-1]}
+    cd ..
+    execute ${LSCT_PKG[$1-1]}
 }
 
 execute() {
-    case $@ in
-        1)
-	   packages/pkg-mgr.sh
-	   ;;
-	2)
-	   echo "2"
-	   ;;
-    esac
+    echo "Executing package: $1"
+    chmod 750 packages/$1/setup.sh
+    read
+
+    packages/$1/setup.sh $PKG_MGR $INSTALL $PKG_NAME
+    menu
 }
 
 menu() {
@@ -96,11 +101,12 @@ menu() {
 	printf "$j) ${DISPLAY_NAME[$i]}:	${DESC[$i]}" | sed 's/|/ /g' | column -t -s ':' 
 	((j++))
     done
+    echo "$j) Quit"
 
     printf "Option: "
     read OPTION
     
-    get_package $OPTION-1
+    get_package $OPTION $j
 }
 
 main() {
