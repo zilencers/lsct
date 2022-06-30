@@ -79,20 +79,17 @@ get_package() {
     cd packages
     git clone ${GIT[$1-1]}
     cd ..
-    execute ${LSCT_PKG[$1-1]}
+    execute ${LSCT_PKG[$1-1]} ${PKG_NAME[$1-1]}
 }
 
 execute() {
-    echo "Executing package: $1"
     chmod 750 packages/$1/setup.sh
-    read
-
-    packages/$1/setup.sh $PKG_MGR $INSTALL $PKG_NAME
+    packages/$1/setup.sh $PKG_MGR $INSTALL $2
     menu
 }
 
 menu() {
-    #clear
+    clear
     echo "------------------------------------------------" 
     echo "        Linux Server Configuration Tool"
     echo "                   Main Menu"
@@ -118,8 +115,8 @@ main() {
     get_distro
     dependency_check
     get_pkg_list
-    #read_pkg_list
-    #menu
+    read_pkg_list
+    menu
 }
 
 main
